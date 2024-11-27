@@ -15,10 +15,16 @@ inputs:
     required: false
     default: '.+'
   username:
-    description: (Optional) Docker's registry user (needed to push image to repository, or to pull from private repository)
+    description: "(Optional) AWS ECR username (needed to push image to repository, or to pull from private repository)"
     required: false
   password:
-    description: (Optional) Docker's registry password (needed to push image to repository, or to pull from private repository)
+    description: "(Optional) AWS ECR password (needed to push image to repository, or to pull from private repository)"
+    required: false
+  dockerhub_username:
+    description: "(Optional) Docker Hub username (needed to avoid rate limiting and pull from private repositories)"
+    required: false
+  dockerhub_password:
+    description: "(Optional) Docker Hub password (needed to avoid rate limiting and pull from private repositories)"
     required: false
   session:
     description: (Optional) Docker registry's session (extra auth parameters). For the AWS ECR, means setting AWS_SESSION_TOKEN environment variable).

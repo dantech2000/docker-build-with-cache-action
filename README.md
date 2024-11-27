@@ -56,6 +56,10 @@ or
 
 - **password**: Docker registry's password (needed to push images, or to pull from a private repository).
 
+- **dockerhub_username**: Docker Hub username (needed to avoid rate limiting and pull from private repositories). This is separate from the main registry credentials.
+
+- **dockerhub_password**: Docker Hub password (needed to avoid rate limiting and pull from private repositories). This is separate from the main registry credentials.
+
 - **session**: Extra auth parameters. For AWS ECR, means setting AWS_SESSION_TOKEN environment variable.
 
 - **push_git_tag**: In addition to `image_tag`, you can also push the git tag in your [branch tip][branch tip] (default: `false`).
@@ -153,10 +157,13 @@ Find working minimal examples for the most known registries in [this repo](https
 ### AWS ECR
 
 > You don't even need to create the repositories in advance, as this action takes care of that for you! (you'll need the `CreateRepository` permission)
+>
+> If you're experiencing Docker Hub rate limiting, you can provide separate Docker Hub credentials using `dockerhub_username` and `dockerhub_password`.
 
 ```yml
 - uses: whoan/docker-build-with-cache-action@v5
   with:
+    # ECR credentials
     username: "${{ secrets.AWS_ACCESS_KEY_ID }}"  # no need to provide it if you already logged in with aws-actions/configure-aws-credentials
     password: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"  # no need to provide it if you already logged in with aws-actions/configure-aws-credentials
     session:  "${{ secrets.AWS_SESSION_TOKEN }}"  # if you need role assumption. no need to provide it if you already logged in with aws-actions/configure-aws-credentials
@@ -165,6 +172,10 @@ Find working minimal examples for the most known registries in [this repo](https
     # or public registry
     #registry: public.ecr.aws
     image_name: hello-world
+    
+    # Optional: Docker Hub credentials to avoid rate limiting
+    dockerhub_username: "${{ secrets.DOCKERHUB_USERNAME }}"
+    dockerhub_password: "${{ secrets.DOCKERHUB_PASSWORD }}"
 ```
 
 ### From a compose file

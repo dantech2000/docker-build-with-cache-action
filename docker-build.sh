@@ -247,9 +247,15 @@ _create_aws_ecr_repos() {
 }
 
 _docker_login() {
+  # First login to Docker Hub if credentials are provided
+  if [ -n "${INPUT_DOCKERHUB_USERNAME}" ] && [ -n "${INPUT_DOCKERHUB_PASSWORD}" ]; then
+    echo "${INPUT_DOCKERHUB_PASSWORD}" | docker login -u "${INPUT_DOCKERHUB_USERNAME}" --password-stdin || return 1
+  fi
+
+  # Then login to the target registry (ECR or other)
   if _is_aws_ecr; then
     _login_to_aws_ecr || return 1
-  else
+  elif [ -n "${INPUT_USERNAME}" ] && [ -n "${INPUT_PASSWORD}" ]; then
     echo "${INPUT_PASSWORD}" | docker login -u "${INPUT_USERNAME}" --password-stdin "${INPUT_REGISTRY}" || return 1
   fi
   trap logout_from_registry EXIT
@@ -323,14 +329,32 @@ check_required_input() {
 
 login_to_registry() {
   echo -e "\n[Action Step] Log in to registry..."
-  if _has_value USERNAME "${INPUT_USERNAME}" && _has_value PASSWORD "${INPUT_PASSWORD}"; then
-    _docker_login && return 0
-    echo "Could not log in (please check credentials)" >&2
-  else
-    echo "No credentials provided" >&2
+  local logged_in=false
+
+  # Try Docker Hub login first
+  if [ -n "${INPUT_DOCKERHUB_USERNAME}" ] && [ -n "${INPUT_DOCKERHUB_PASSWORD}" ]; then
+    echo "Logging in to Docker Hub..."
+    if echo "${INPUT_DOCKERHUB_PASSWORD}" | docker login -u "${INPUT_DOCKERHUB_USERNAME}" --password-stdin; then
+      logged_in=true
+    else
+      echo "Could not log in to Docker Hub (please check credentials)" >&2
+    fi
   fi
-  not_logged_in=true
-  echo "INFO: Won't be able to pull from private repos, nor to push to public/private repos" >&2
+
+  # Then try target registry login
+  if _has_value USERNAME "${INPUT_USERNAME}" && _has_value PASSWORD "${INPUT_PASSWORD}"; then
+    echo "Logging in to target registry..."
+    if _docker_login; then
+      logged_in=true
+    else
+      echo "Could not log in to target registry (please check credentials)" >&2
+    fi
+  fi
+
+  if [ "$logged_in" = false ]; then
+    not_logged_in=true
+    echo "INFO: Won't be able to pull from private repos, nor to push to public/private repos" >&2
+  fi
 }
 
 create_repos() {
